@@ -224,9 +224,6 @@ def main():
                 # If there's no text content or no collection selected, just pass the original prompt
                 ai_response, gemini_history = get_response(chat, prompt)
 
-            print("\n\nChat history:", gemini_history)
-            print()
-
         # Save Gemini history to database
         save_gemini_history(st.session_state.active_chat_id, gemini_history)
 
