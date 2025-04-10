@@ -1,0 +1,7 @@
+streamlit
+pillow
+google-genai
+python-dotenv
+chromadb
+google-generativeai
+pymupdf
