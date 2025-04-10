@@ -248,7 +248,7 @@ def main():
         # Re-enable chat input
         st.session_state.processing = False
 
-        # Rerun the app to update the chat history
+        # Rerun the app to update the chat history and UI
         st.rerun()
 
 
