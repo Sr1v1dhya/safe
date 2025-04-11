@@ -136,7 +136,7 @@ def add_documents(documents: List[Dict[str, Any]], collection_name: str = None):
     return len(documents)
 
 
-def query_collection(query_text: str, n_results: int = 5, collection_name: str = None):
+def query_collection(query_text: str, n_results: int = 10, collection_name: str = None):
     """Query the ChromaDB collection for relevant documents."""
     if collection_name is None:
         collection_name = get_default_collection_name()

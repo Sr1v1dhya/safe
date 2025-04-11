@@ -104,6 +104,29 @@ def main():
                 st.rerun()
 
         st.divider()
+        # # Add Admin section
+        # st.markdown("### Admin")
+        # admin_cols = st.columns(2)
+        
+        # with admin_cols[0]:
+        #     if st.button("📚 Knowledge Base", use_container_width=True):
+        #         admin_key = st.secrets.get("admin_key", "admin123")
+        #         js = f"""
+        #         <script>
+        #             window.open("http://localhost:8501/manage_docs?key={admin_key}", "_blank");
+        #         </script>
+        #         """
+        #         st.components.v1.html(js, height=0)
+        
+        # with admin_cols[1]:
+        #     if st.button("🔍 Search KB", use_container_width=True):
+        #         admin_key = st.secrets.get("admin_key", "admin123")
+        #         js = f"""
+        #         <script>
+        #             window.open("http://localhost:8501/inspect_docs?key={admin_key}", "_blank");
+        #         </script>
+        #         """
+        #         st.components.v1.html(js, height=0)
 
     # Initialize or retrieve chat from active session
     active_chat_id = st.session_state.active_chat_id
