@@ -1,3 +1,4 @@
+#Correct Requirements.txt
 streamlit
 pillow
 google-genai
@@ -5,3 +6,5 @@ python-dotenv
 chromadb
 google-generativeai
 pymupdf
+requests
+geopy

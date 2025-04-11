@@ -36,7 +36,7 @@ from rag import generate_prompt_with_context
 # Add function for Groq Speech Recognition
 def transcribe_audio_with_groq(audio_file):
     """Transcribe audio using Groq's Whisper API"""
-    API_KEY = st.secrets["groq_api_key"]  
+    API_KEY = st.secrets["groq_api_key"]  # Store this in your Streamlit secrets
     GROQ_ENDPOINT = "https://api.groq.com/openai/v1/audio/transcriptions"
     MODEL_NAME = "whisper-large-v3"
     
@@ -319,7 +319,6 @@ def main():
 
         # Rerun the app to update the chat history and UI
         st.rerun()
-
 
 if __name__ == "__main__":
     main()

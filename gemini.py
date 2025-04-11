@@ -118,29 +118,25 @@ def get_image_descrption(files):
     return response.text
     # return ""
 
-def transcribe_speech(api_key: str) -> str:
+def transcribe_audio_file(api_key: str, audio_file) -> str:
     """
-    Capture real-time speech from the microphone and transcribe it using Whisper AI API.
+    Transcribe an uploaded audio file using Groq Speech Recognition API
     """
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        st.info("Listening... Speak now.")
-        try:
-            audio = recognizer.listen(source, timeout=5)  # Listen for 5 seconds
-            st.info("Processing your speech...")
-            
-            # Convert audio to WAV format and send to Whisper API
-            audio_data = audio.get_wav_data()
-            response = requests.post(
-                "https://api.openai.com/v1/audio/transcriptions",
-                headers={"Authorization": f"Bearer {api_key}"},
-                files={"file": ("speech.wav", audio_data, "audio/wav")},
-                data={"model": "whisper-1"}
-            )
-            response.raise_for_status()
-            return response.json().get("text", "Could not transcribe speech.")
-        except sr.WaitTimeoutError:
-            st.error("Listening timed out. Please try again.")
-        except Exception as e:
-            st.error(f"Error during transcription: {e}")
+    try:
+        st.info("Processing audio...")
+        
+        # Read the audio file
+        audio_bytes = audio_file.read()
+        
+        # Send to Groq API
+        response = requests.post(
+            "https://api.groq.com/openai/v1/audio/transcriptions",
+            headers={"Authorization": f"Bearer {api_key}"},
+            files={"file": (audio_file.name, audio_bytes, audio_file.type)},
+            data={"model": "whisper-large-v3", "response_format": "json"}
+        )
+        response.raise_for_status()
+        return response.json().get("text", "Could not transcribe audio.")
+    except Exception as e:
+        st.error(f"Error during transcription: {e}")
         return ""
