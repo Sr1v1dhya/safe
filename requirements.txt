@@ -9,3 +9,5 @@ pymupdf
 requests
 geopy
 SpeechRecognition
+folium
+streamlit-folium
