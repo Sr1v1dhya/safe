@@ -1,3 +1,4 @@
+#Correct Requirements.txt
 streamlit
 pillow
 google-genai
