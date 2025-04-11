@@ -3,6 +3,9 @@ from PIL import Image
 import streamlit as st
 from google import genai
 from google.genai.types import Content, Part, UserContent, GenerateContentConfig
+import speech_recognition as sr
+import requests
+
 
 system_prompt = """ 
 You are first-aid assistant named S.A.F.E. (Smart AI First-aid Expert). You have to respond to the user's questions about first-aid. Users will be asking you questions about their medical situation and emergency. 
@@ -114,3 +117,26 @@ def get_image_descrption(files):
 
     return response.text
     # return ""
+
+def transcribe_audio_file(api_key: str, audio_file) -> str:
+    """
+    Transcribe an uploaded audio file using Groq Speech Recognition API
+    """
+    try:
+        st.info("Processing audio...")
+        
+        # Read the audio file
+        audio_bytes = audio_file.read()
+        
+        # Send to Groq API
+        response = requests.post(
+            "https://api.groq.com/openai/v1/audio/transcriptions",
+            headers={"Authorization": f"Bearer {api_key}"},
+            files={"file": (audio_file.name, audio_bytes, audio_file.type)},
+            data={"model": "whisper-large-v3", "response_format": "json"}
+        )
+        response.raise_for_status()
+        return response.json().get("text", "Could not transcribe audio.")
+    except Exception as e:
+        st.error(f"Error during transcription: {e}")
+        return ""

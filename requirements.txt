@@ -1,3 +1,6 @@
+# System dependency required for PyAudio:
+# sudo apt update && sudo apt install portaudio19-dev
+
 streamlit
 pillow
 google-genai
@@ -5,3 +8,7 @@ python-dotenv
 chromadb
 google-generativeai
 pymupdf
+SpeechRecognition
+pyaudio
+requests
+geopy

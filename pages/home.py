@@ -1,5 +1,6 @@
 import streamlit as st
 import io
+import requests
 from PIL import Image
 from gemini import (
     get_response,
@@ -30,6 +31,28 @@ from vector_store import (
 )
 from document_processor import process_document
 from rag import generate_prompt_with_context
+
+
+# Add function for Groq Speech Recognition
+def transcribe_audio_with_groq(audio_file):
+    """Transcribe audio using Groq's Whisper API"""
+    API_KEY = st.secrets["groq_api_key"]  # Store this in your Streamlit secrets
+    GROQ_ENDPOINT = "https://api.groq.com/openai/v1/audio/transcriptions"
+    MODEL_NAME = "whisper-large-v3"
+    
+    headers = {"Authorization": f"Bearer {API_KEY}"}
+    data = {
+        "model": MODEL_NAME,
+        "response_format": "json"
+    }
+    
+    response = requests.post(GROQ_ENDPOINT, headers=headers, files={"file": audio_file}, data=data)
+    
+    if response.status_code == 200:
+        result = response.json()
+        return result["text"]
+    else:
+        raise Exception(f"Error {response.status_code}: {response.text}")
 
 
 def main():
@@ -82,25 +105,6 @@ def main():
 
         st.divider()
 
-        # Knowledge base stats
-        # with st.expander("Knowledge Base Status"):
-        #     try:
-        #         all_docs = get_all_documents()
-        #         if all_docs and "documents" in all_docs and all_docs["documents"]:
-        #             unique_sources = set()
-        #             for metadata in all_docs["metadatas"]:
-        #                 if "source" in metadata:
-        #                     unique_sources.add(metadata["source"])
-
-        #             st.info(
-        #                 f"{len(unique_sources)} documents with {len(all_docs['documents'])} total chunks."
-        #             )
-        #             st.write("For detailed management, go to the Knowledge Base page.")
-        #         else:
-        #             st.info("Knowledge base is empty.")
-        #     except Exception as e:
-        #         st.error(f"Error retrieving knowledge base stats: {str(e)}")
-
     # Initialize or retrieve chat from active session
     active_chat_id = st.session_state.active_chat_id
 
@@ -139,29 +143,55 @@ def main():
         st.markdown(
             "Upload documents to the knowledge base in the Knowledge Base page to improve answers."
         )
+        st.markdown(
+            "You can also upload images or audio files using the attachment button in the chat input."
+        )
 
-    # Chat input
+    # Chat input with support for both images and audio files
     if prompt := st.chat_input(
         "Ask me anything...",
         accept_file="multiple",
-        file_type=["jpg", "jpeg", "png"],
+        file_type=["jpg", "jpeg", "png", "mp3", "wav", "m4a"],  # Added audio file types
         disabled=st.session_state.processing,
         on_submit=disable_chat_input,
     ):
         uploaded_images = []
+        transcribed_text = ""
 
         # Process uploaded files
         if hasattr(prompt, "files") and prompt.files:
             for file in prompt.files:
-                # Read and save images to session state
-                image = Image.open(file)
-                # Convert to bytes for storage
-                img_bytes = io.BytesIO()
-                image.save(img_bytes, format=image.format if image.format else "PNG")
-                uploaded_images.append(img_bytes.getvalue())
+                file_type = file.type.split('/')[0]
+                
+                if file_type == 'image':
+                    # Handle image files
+                    image = Image.open(file)
+                    # Convert to bytes for storage
+                    img_bytes = io.BytesIO()
+                    image.save(img_bytes, format=image.format if image.format else "PNG")
+                    uploaded_images.append(img_bytes.getvalue())
+                
+                elif file_type == 'audio':
+                    # Handle audio files - transcribe them
+                    with st.spinner("Transcribing audio..."):
+                        try:
+                            audio_text = transcribe_audio_with_groq(file)
+                            if transcribed_text:
+                                transcribed_text += "\n\n" + audio_text
+                            else:
+                                transcribed_text = audio_text
+                        except Exception as e:
+                            st.error(f"Error transcribing audio: {str(e)}")
 
         # Add user message to chat history with images
         user_content = prompt.text if hasattr(prompt, "text") else ""
+        
+        # Add transcribed text to user message if available
+        if transcribed_text:
+            if user_content:
+                user_content += f"\n\nTranscribed audio: {transcribed_text}"
+            else:
+                user_content = f"Transcribed audio: {transcribed_text}"
 
         # Create a new chat if none is active
         if not st.session_state.active_chat_id:
@@ -197,9 +227,12 @@ def main():
             ):  # Only query if there's text content and a selected collection
                 user_query = user_content
                 if hasattr(prompt, "files") and prompt.files:
-                    image_descriptions = get_image_descrption(prompt.files)
-                    print("Image descriptions:", image_descriptions)
-                    user_query += "\n" + image_descriptions
+                    # Get image files only for image description
+                    image_files = [f for f in prompt.files if f.type.split('/')[0] == 'image']
+                    if image_files:
+                        image_descriptions = get_image_descrption(image_files)
+                        print("Image descriptions:", image_descriptions)
+                        user_query += "\n" + image_descriptions
 
                 query_results = query_collection(user_query, n_results=100)
 
@@ -214,15 +247,51 @@ def main():
                         self.text = text
                         self.files = files
 
-                rag_prompt = EnhancedPrompt(
-                    enhanced_prompt, prompt.files if hasattr(prompt, "files") else None
-                )
+                # Only pass image files to RAG prompt for processing
+                image_files = [f for f in prompt.files if f.type.split('/')[0] == 'image'] if hasattr(prompt, "files") else None
+                
+                rag_prompt = EnhancedPrompt(enhanced_prompt, image_files)
 
                 # Get the response using the enhanced prompt
                 ai_response, gemini_history = get_response(chat, rag_prompt)
             else:
-                # If there's no text content or no collection selected, just pass the original prompt
-                ai_response, gemini_history = get_response(chat, prompt)
+                # If there's no text content or no collection selected
+                # Process prompt with images and/or transcribed audio
+                if hasattr(prompt, "files") and prompt.files:
+                    # Create a custom prompt with only image files
+                    class FilteredPrompt:
+                        def __init__(self, text, files=None):
+                            self.text = text
+                            self.files = files
+                    
+                    # Filter to only include image files
+                    image_files = [f for f in prompt.files if f.type.split('/')[0] == 'image']
+                    
+                    # Ensure we have some content (either text or images or transcribed audio)
+                    text_content = prompt.text if hasattr(prompt, "text") and prompt.text else ""
+                    
+                    # If we have transcribed text, make sure it's included in the content
+                    if transcribed_text and not text_content:
+                        text_content = f"Transcribed audio: {transcribed_text}"
+                    elif transcribed_text:
+                        # Already included in user_content above, but just in case
+                        if "Transcribed audio:" not in text_content:
+                            text_content += f"\n\nTranscribed audio: {transcribed_text}"
+                    
+                    # If we still have no text but have images, add a placeholder text
+                    if not text_content and image_files:
+                        text_content = "Please analyze this image."
+                        
+                    filtered_prompt = FilteredPrompt(text_content, image_files)
+                    ai_response, gemini_history = get_response(chat, filtered_prompt)
+                else:
+                    # For text-only prompts (which might include transcribed audio already)
+                    # Make sure there's something to send to the API
+                    if not user_content:
+                        user_content = "Hello"  # Fallback in case somehow everything is empty
+                    
+                    # Process as normal
+                    ai_response, gemini_history = get_response(chat, prompt)
 
         # Save Gemini history to database
         save_gemini_history(st.session_state.active_chat_id, gemini_history)
@@ -250,7 +319,6 @@ def main():
 
         # Rerun the app to update the chat history and UI
         st.rerun()
-
 
 if __name__ == "__main__":
     main()
