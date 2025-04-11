@@ -22,7 +22,8 @@ def initialise_session_state():
         st.session_state.chat_title = "New Chat"
     if "knowledge_base_docs" not in st.session_state:
         st.session_state.knowledge_base_docs = []
-
+    if "processed_audio" not in st.session_state:
+        st.session_state.processed_audio = None
 
 def disable_chat_input():
     """
@@ -45,3 +46,4 @@ def new_chat():
     st.session_state.active_chat_id = None  # Set to None instead of creating a new chat
     st.session_state.messages = []
     st.session_state.chat_title = "New Chat"
+
