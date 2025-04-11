@@ -22,7 +22,8 @@ def initialise_session_state():
         st.session_state.chat_title = "New Chat"
     if "knowledge_base_docs" not in st.session_state:
         st.session_state.knowledge_base_docs = []
-
+    if "speech_input" not in st.session_state:
+        st.session_state.speech_input = ""
 
 def disable_chat_input():
     """

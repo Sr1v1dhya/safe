@@ -3,6 +3,9 @@ from PIL import Image
 import streamlit as st
 from google import genai
 from google.genai.types import Content, Part, UserContent, GenerateContentConfig
+import speech_recognition as sr
+import requests
+
 
 system_prompt = """ 
 You are first-aid assistant named S.A.F.E. (Smart AI First-aid Expert). You have to respond to the user's questions about first-aid. Users will be asking you questions about their medical situation and emergency. 
@@ -114,3 +117,30 @@ def get_image_descrption(files):
 
     return response.text
     # return ""
+
+def transcribe_speech(api_key: str) -> str:
+    """
+    Capture real-time speech from the microphone and transcribe it using Whisper AI API.
+    """
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        st.info("Listening... Speak now.")
+        try:
+            audio = recognizer.listen(source, timeout=5)  # Listen for 5 seconds
+            st.info("Processing your speech...")
+            
+            # Convert audio to WAV format and send to Whisper API
+            audio_data = audio.get_wav_data()
+            response = requests.post(
+                "https://api.openai.com/v1/audio/transcriptions",
+                headers={"Authorization": f"Bearer {api_key}"},
+                files={"file": ("speech.wav", audio_data, "audio/wav")},
+                data={"model": "whisper-1"}
+            )
+            response.raise_for_status()
+            return response.json().get("text", "Could not transcribe speech.")
+        except sr.WaitTimeoutError:
+            st.error("Listening timed out. Please try again.")
+        except Exception as e:
+            st.error(f"Error during transcription: {e}")
+        return ""
