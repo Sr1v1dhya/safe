@@ -42,7 +42,7 @@ def init_db():
         content TEXT NOT NULL,
         images BLOB,
         timestamp TEXT NOT NULL,
-        FOREIGN KEY (session_id) REFERENCES chat_sessions (id)
+        FOREIGN KEY (session_id) REFERENCES chat_sessions (id) ON DELETE CASCADE
     )
     """
     )
@@ -53,7 +53,7 @@ def init_db():
     CREATE TABLE IF NOT EXISTS gemini_history (
         session_id INTEGER NOT NULL,
         history_data TEXT NOT NULL,
-        FOREIGN KEY (session_id) REFERENCES chat_sessions (id)
+        FOREIGN KEY (session_id) REFERENCES chat_sessions (id) ON DELETE CASCADE
     )
     """
     )
@@ -68,7 +68,7 @@ def create_new_chat():
     c = conn.cursor()
 
     now = datetime.now().isoformat()
-    title = f"Chat {now}"
+    title = "New Chat"  # Changed from timestamp to "New Chat"
 
     c.execute(
         "INSERT INTO chat_sessions (title, created_at, updated_at) VALUES (?, ?, ?)",
@@ -206,3 +206,21 @@ def get_gemini_history(session_id):
     if row:
         return json.loads(row["history_data"])
     return None
+
+
+def delete_chat_session(chat_id):
+    """Delete a specific chat session and all its messages"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM chat_sessions WHERE id = ?", (chat_id,))
+    conn.commit()
+    conn.close()
+
+
+def delete_all_chat_sessions():
+    """Delete all chat sessions and messages"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM chat_sessions")
+    conn.commit()
+    conn.close()

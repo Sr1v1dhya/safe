@@ -11,3 +11,4 @@ geopy
 SpeechRecognition
 folium
 streamlit-folium
+streamlit-extras

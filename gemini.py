@@ -140,3 +140,4 @@ def transcribe_audio_file(api_key: str, audio_file) -> str:
     except Exception as e:
         st.error(f"Error during transcription: {e}")
         return ""
+
