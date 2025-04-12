@@ -186,7 +186,7 @@ st.markdown("""
         }
         /* Make sidebar more prominent */
         [data-testid="stSidebar"] {
-            background-color: #000000;
+            background-color: #262730;
             border-right: 1px solid #eaeaea;
         }
         /* Make language selector stand out */
