@@ -1,14 +1,15 @@
 import streamlit as st
 from vector_store import query_collection
 
+admin_key = st.query_params.get("key", "invalid") # default is 'invalid'
+
+if admin_key != st.secrets["admin_key"]:
+    st.error("🚫 Unauthorized access")
+    st.stop()
+
 def main():
     """Document search page with dark mode UI"""
-    st.set_page_config(
-        page_title="Search Knowledge Base",
-        page_icon="🔍",
-        layout="wide",
-        initial_sidebar_state="collapsed"
-    )
+
     
     # Apply custom CSS for dark mode
     st.markdown("""
@@ -226,4 +227,10 @@ def main():
             """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
+    st.set_page_config(
+        page_title="Search Knowledge Base",
+        page_icon="🔍",
+        layout="wide",
+        initial_sidebar_state="collapsed"
+    )
     main()

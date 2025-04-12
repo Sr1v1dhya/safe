@@ -14,14 +14,16 @@ from vector_store import (
 )
 
 
+admin_key = st.query_params.get("key", "invalid") # default is 'invalid'
+
+if admin_key != st.secrets["admin_key"]:
+    st.error("🚫 Unauthorized access")
+    st.stop()
+
+
 def main():
     """Knowledge Base Management Page"""
-    st.set_page_config(
-        page_title="Knowledge Base Management",
-        page_icon="📚",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
+
 
     # Custom CSS for enhanced dark mode UI
     st.markdown("""
@@ -573,4 +575,10 @@ def main():
 
 
 if __name__ == "__main__":
+    st.set_page_config(
+        page_title="Knowledge Base Management",
+        page_icon="📚",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
     main()
